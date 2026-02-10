@@ -9,6 +9,7 @@ interface ModalProps {
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full';
   autoHeight?: boolean;
+  className?: string;
 }
 
 const sizeClasses = {
@@ -21,7 +22,7 @@ const sizeClasses = {
   'full': 'max-w-[90vw]',
 };
 
-export function Modal({ isOpen, onClose, title, children, size = 'md', autoHeight = false }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, size = 'md', autoHeight = false, className }: ModalProps) {
   // Bloquear scroll do body quando modal está aberto
   useEffect(() => {
     if (isOpen) {
@@ -46,7 +47,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', autoHeigh
         className={cn(
           'relative w-full bg-card rounded-xl shadow-xl border border-border animate-scale-in flex flex-col',
           autoHeight ? "max-h-[calc(100vh-32px)]" : "max-h-[calc(100vh-32px)]",
-          sizeClasses[size]
+          sizeClasses[size],
+          className
         )}
       >
         {/* Header fixo */}

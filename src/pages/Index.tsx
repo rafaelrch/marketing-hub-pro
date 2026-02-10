@@ -11,6 +11,7 @@ import { EmployeesPage } from '@/pages/Employees';
 import { MissionsPage } from '@/pages/Missions';
 import { SuggestionsPage } from '@/pages/Suggestions';
 import { AgentsPage } from '@/pages/Agents';
+import { CaptationsPage } from '@/pages/Captations';
 import { initializeMockData } from '@/lib/storage';
 
 const Index = () => {
@@ -45,6 +46,8 @@ const Index = () => {
         return <SuggestionsPage searchQuery={searchQuery} />;
       case 'agents':
         return <AgentsPage searchQuery={searchQuery} />;
+      case 'captations':
+        return <CaptationsPage searchQuery={searchQuery} />;
       default:
         return <Dashboard onNavigate={setCurrentPage} />;
     }

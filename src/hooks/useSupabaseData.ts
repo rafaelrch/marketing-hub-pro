@@ -297,6 +297,307 @@ export function useApprovals() {
   return useSupabaseTable<Approval>('approvals');
 }
 
+// Tipos para Captações
+export interface CaptationItem {
+  id: string;
+  captation_id: string;
+  name: string;
+  quantity: number;
+  created_at: string;
+}
+
+export interface CaptationReference {
+  id: string;
+  captation_id: string;
+  type: 'link' | 'file';
+  url: string;
+  name: string;
+  created_at: string;
+}
+
+export interface CaptationTake {
+  id: string;
+  captation_id: string;
+  description: string;
+  completed: boolean;
+  completed_at?: string;
+  completed_by?: string;
+  order_index: number;
+  created_at: string;
+}
+
+export interface Captation {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location?: string;
+  client_name?: string;
+  synopsis?: string;
+  script?: string;
+  status: 'scheduled' | 'in_progress' | 'completed';
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  // Campos carregados via join
+  items?: CaptationItem[];
+  creative_references?: CaptationReference[];
+  references?: CaptationReference[];
+  takes?: CaptationTake[];
+}
+
+export function useCaptations() {
+  const [data, setData] = useState<Captation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      
+      // Buscar captações
+      const { data: captations, error: captationsError } = await supabase
+        .from('captations')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (captationsError) throw captationsError;
+
+      // Para cada captação, buscar dados relacionados
+      const captationsWithRelations = await Promise.all(
+        (captations || []).map(async (captation) => {
+          const [itemsRes, creativeRefsRes, refsRes, takesRes] = await Promise.all([
+            supabase.from('captation_items').select('*').eq('captation_id', captation.id),
+            supabase.from('captation_creative_references').select('*').eq('captation_id', captation.id),
+            supabase.from('captation_references').select('*').eq('captation_id', captation.id),
+            supabase.from('captation_takes').select('*').eq('captation_id', captation.id).order('order_index'),
+          ]);
+
+          return {
+            ...captation,
+            items: itemsRes.data || [],
+            creative_references: creativeRefsRes.data || [],
+            references: refsRes.data || [],
+            takes: takesRes.data || [],
+          } as Captation;
+        })
+      );
+
+      setData(captationsWithRelations);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching captations:', err);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar captações');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const create = useCallback(async (
+    captation: Omit<Captation, 'id' | 'created_at' | 'updated_at' | 'items' | 'creative_references' | 'references' | 'takes'>,
+    items: Omit<CaptationItem, 'id' | 'captation_id' | 'created_at'>[],
+    creativeRefs: Omit<CaptationReference, 'id' | 'captation_id' | 'created_at'>[],
+    refs: Omit<CaptationReference, 'id' | 'captation_id' | 'created_at'>[],
+    takes: Omit<CaptationTake, 'id' | 'captation_id' | 'created_at'>[]
+  ) => {
+    try {
+      // Formatar time para HH:MM:SS se necessário
+      let formattedTime = captation.time;
+      if (formattedTime && formattedTime.length === 5) {
+        formattedTime = formattedTime + ':00';
+      }
+
+      // Criar captação
+      const { data: newCaptation, error: captationError } = await supabase
+        .from('captations')
+        .insert([{
+          title: captation.title,
+          date: captation.date,
+          time: formattedTime,
+          location: captation.location || null,
+          client_name: captation.client_name || null,
+          synopsis: captation.synopsis || null,
+          script: captation.script || null,
+          status: captation.status || 'scheduled',
+        }])
+        .select()
+        .single();
+
+      if (captationError) {
+        console.error('Error creating captation:', captationError);
+        throw captationError;
+      }
+
+      const captationId = newCaptation.id;
+
+      // Criar itens
+      if (items.length > 0) {
+        await supabase.from('captation_items').insert(
+          items.map(item => ({ ...item, captation_id: captationId }))
+        );
+      }
+
+      // Criar referências criativas
+      if (creativeRefs.length > 0) {
+        await supabase.from('captation_creative_references').insert(
+          creativeRefs.map(ref => ({ ...ref, captation_id: captationId }))
+        );
+      }
+
+      // Criar referências
+      if (refs.length > 0) {
+        await supabase.from('captation_references').insert(
+          refs.map(ref => ({ ...ref, captation_id: captationId }))
+        );
+      }
+
+      // Criar takes
+      if (takes.length > 0) {
+        await supabase.from('captation_takes').insert(
+          takes.map((take, idx) => ({ ...take, captation_id: captationId, order_index: idx }))
+        );
+      }
+
+      await fetchData();
+      return newCaptation;
+    } catch (err) {
+      console.error('Error creating captation:', err);
+      throw err;
+    }
+  }, [fetchData]);
+
+  const update = useCallback(async (
+    id: string,
+    captation: Partial<Omit<Captation, 'id' | 'created_at' | 'updated_at' | 'items' | 'creative_references' | 'references' | 'takes'>>,
+    items?: Omit<CaptationItem, 'id' | 'captation_id' | 'created_at'>[],
+    creativeRefs?: Omit<CaptationReference, 'id' | 'captation_id' | 'created_at'>[],
+    refs?: Omit<CaptationReference, 'id' | 'captation_id' | 'created_at'>[],
+    takes?: Omit<CaptationTake, 'id' | 'captation_id' | 'created_at'>[]
+  ) => {
+    try {
+      // Formatar time para HH:MM:SS se necessário
+      const updateData: Record<string, unknown> = {};
+      if (captation.title !== undefined) updateData.title = captation.title;
+      if (captation.date !== undefined) updateData.date = captation.date;
+      if (captation.time !== undefined) {
+        let formattedTime = captation.time;
+        if (formattedTime && formattedTime.length === 5) {
+          formattedTime = formattedTime + ':00';
+        }
+        updateData.time = formattedTime;
+      }
+      if (captation.location !== undefined) updateData.location = captation.location || null;
+      if (captation.client_name !== undefined) updateData.client_name = captation.client_name || null;
+      if (captation.synopsis !== undefined) updateData.synopsis = captation.synopsis || null;
+      if (captation.script !== undefined) updateData.script = captation.script || null;
+      if (captation.status !== undefined) updateData.status = captation.status;
+
+      // Atualizar captação
+      const { error: captationError } = await supabase
+        .from('captations')
+        .update(updateData)
+        .eq('id', id);
+
+      if (captationError) {
+        console.error('Error updating captation:', captationError);
+        throw captationError;
+      }
+
+      // Atualizar itens (deletar e reinserir)
+      if (items !== undefined) {
+        await supabase.from('captation_items').delete().eq('captation_id', id);
+        if (items.length > 0) {
+          await supabase.from('captation_items').insert(
+            items.map(item => ({ ...item, captation_id: id }))
+          );
+        }
+      }
+
+      // Atualizar referências criativas
+      if (creativeRefs !== undefined) {
+        await supabase.from('captation_creative_references').delete().eq('captation_id', id);
+        if (creativeRefs.length > 0) {
+          await supabase.from('captation_creative_references').insert(
+            creativeRefs.map(ref => ({ ...ref, captation_id: id }))
+          );
+        }
+      }
+
+      // Atualizar referências
+      if (refs !== undefined) {
+        await supabase.from('captation_references').delete().eq('captation_id', id);
+        if (refs.length > 0) {
+          await supabase.from('captation_references').insert(
+            refs.map(ref => ({ ...ref, captation_id: id }))
+          );
+        }
+      }
+
+      // Atualizar takes
+      if (takes !== undefined) {
+        await supabase.from('captation_takes').delete().eq('captation_id', id);
+        if (takes.length > 0) {
+          await supabase.from('captation_takes').insert(
+            takes.map((take, idx) => ({ ...take, captation_id: id, order_index: idx }))
+          );
+        }
+      }
+
+      await fetchData();
+    } catch (err) {
+      console.error('Error updating captation:', err);
+      throw err;
+    }
+  }, [fetchData]);
+
+  const updateTakeStatus = useCallback(async (takeId: string, completed: boolean) => {
+    try {
+      await supabase
+        .from('captation_takes')
+        .update({ 
+          completed, 
+          completed_at: completed ? new Date().toISOString() : null 
+        })
+        .eq('id', takeId);
+      
+      await fetchData();
+    } catch (err) {
+      console.error('Error updating take status:', err);
+      throw err;
+    }
+  }, [fetchData]);
+
+  const updateStatus = useCallback(async (id: string, status: 'scheduled' | 'in_progress' | 'completed') => {
+    try {
+      await supabase
+        .from('captations')
+        .update({ status })
+        .eq('id', id);
+      
+      await fetchData();
+    } catch (err) {
+      console.error('Error updating captation status:', err);
+      throw err;
+    }
+  }, [fetchData]);
+
+  const remove = useCallback(async (id: string) => {
+    try {
+      await supabase.from('captations').delete().eq('id', id);
+      setData(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      console.error('Error deleting captation:', err);
+      throw err;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, refetch: fetchData, create, update, updateTakeStatus, updateStatus, remove };
+}
+
 export function useApprovalComments(approvalId?: string, contentId?: string) {
   const [data, setData] = useState<ApprovalComment[]>([]);
   const [loading, setLoading] = useState(true);

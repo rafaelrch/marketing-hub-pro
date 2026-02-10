@@ -14,6 +14,7 @@ import {
   RocketLaunchIcon,
   ChatBubbleLeftIcon,
   SparklesIcon,
+  VideoCameraIcon,
 } from '@heroicons/react/24/outline';
 import {
   Squares2X2Icon as Squares2X2IconSolid,
@@ -27,6 +28,7 @@ import {
   RocketLaunchIcon as RocketLaunchIconSolid,
   ChatBubbleLeftIcon as ChatBubbleLeftIconSolid,
   SparklesIcon as SparklesIconSolid,
+  VideoCameraIcon as VideoCameraIconSolid,
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -45,6 +47,7 @@ const menuItems = [
   { id: 'ideas', label: 'Ideias', icon: LightBulbIcon, iconSolid: LightBulbIconSolid },
   { id: 'clients', label: 'Clientes', icon: UserGroupIcon, iconSolid: UserGroupIconSolid },
   { id: 'schedule', label: 'Cronograma', icon: CalendarIcon, iconSolid: CalendarIconSolid },
+  { id: 'captations', label: 'Captações', icon: VideoCameraIcon, iconSolid: VideoCameraIconSolid },
   { id: 'approvals', label: 'Aprovações', icon: ClipboardDocumentCheckIcon, iconSolid: ClipboardDocumentCheckIconSolid, badge: 'pendingApprovals' },
   { id: 'calendar', label: 'Calendário', icon: CalendarDaysIcon, iconSolid: CalendarDaysIconSolid },
   { id: 'tasks', label: 'Tarefas', icon: CheckCircleIcon, iconSolid: CheckCircleIconSolid, badge: 'todayTasks' },
