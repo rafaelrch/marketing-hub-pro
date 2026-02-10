@@ -64,11 +64,13 @@ const parseLocalDate = (dateString: string): Date => {
 };
 
 // Filtro de data para a página de Aprovações
-type ApprovalsDateFilter = 'today' | 'tomorrow' | 'thisWeek' | 'nextWeek' | 'thisMonth' | 'next3Months' | 'thisYear';
+type ApprovalsDateFilter = 'all' | 'today' | 'tomorrow' | 'thisWeek' | 'nextWeek' | 'thisMonth' | 'next3Months' | 'thisYear';
 
-const getApprovalsDateRange = (filter: ApprovalsDateFilter): { startDate: string; endDate: string } => {
+const getApprovalsDateRange = (filter: ApprovalsDateFilter): { startDate: string; endDate: string } | null => {
   const today = startOfDay(new Date());
   switch (filter) {
+    case 'all':
+      return null; // Sem filtro de data
     case 'today': {
       const d = format(today, 'yyyy-MM-dd');
       return { startDate: d, endDate: d };
@@ -109,6 +111,7 @@ const getApprovalsDateRange = (filter: ApprovalsDateFilter): { startDate: string
 };
 
 const APPROVALS_DATE_FILTER_LABELS: Record<ApprovalsDateFilter, string> = {
+  all: 'Todos',
   today: 'Hoje',
   tomorrow: 'Amanhã',
   thisWeek: 'Esta semana',
@@ -366,7 +369,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
-  const [dateFilter, setDateFilter] = useState<ApprovalsDateFilter>('today');
+  const [dateFilter, setDateFilter] = useState<ApprovalsDateFilter>('all');
 
   // Filtrar funcionários da área criativa
   const creativeEmployees = useMemo(() => {
@@ -446,7 +449,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
 
   // Organizar conteúdos por coluna (filtrado por funcionário e por data)
   const contentsByColumn = useMemo(() => {
-    const { startDate, endDate } = getApprovalsDateRange(dateFilter);
+    const dateRange = getApprovalsDateRange(dateFilter);
     const grouped: Record<ColumnId, Content[]> = {
       content: [],
       production: [],
@@ -461,8 +464,12 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
         const matchesSearch = !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesEmployee = !selectedEmployee || c.responsible_id === selectedEmployee;
         // Data: usar prazo de entrega (deadline) ou data de publicação; se não tiver nenhuma, incluir
-        const refDate = c.deadline || c.publish_date;
-        const matchesDate = !refDate || (refDate >= startDate && refDate <= endDate);
+        // Se dateRange for null (filtro "Todos"), não aplicar filtro de data
+        let matchesDate = true;
+        if (dateRange) {
+          const refDate = c.deadline || c.publish_date;
+          matchesDate = !refDate || (refDate >= dateRange.startDate && refDate <= dateRange.endDate);
+        }
         return matchesSearch && matchesEmployee && matchesDate;
       })
       .forEach(content => {
@@ -703,6 +710,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">{APPROVALS_DATE_FILTER_LABELS.all}</SelectItem>
               <SelectItem value="today">{APPROVALS_DATE_FILTER_LABELS.today}</SelectItem>
               <SelectItem value="tomorrow">{APPROVALS_DATE_FILTER_LABELS.tomorrow}</SelectItem>
               <SelectItem value="thisWeek">{APPROVALS_DATE_FILTER_LABELS.thisWeek}</SelectItem>

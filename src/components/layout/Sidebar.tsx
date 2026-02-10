@@ -48,7 +48,7 @@ const menuItems = [
   { id: 'approvals', label: 'Aprovações', icon: ClipboardDocumentCheckIcon, iconSolid: ClipboardDocumentCheckIconSolid, badge: 'pendingApprovals' },
   { id: 'calendar', label: 'Calendário', icon: CalendarDaysIcon, iconSolid: CalendarDaysIconSolid },
   { id: 'tasks', label: 'Tarefas', icon: CheckCircleIcon, iconSolid: CheckCircleIconSolid, badge: 'todayTasks' },
-  { id: 'employees', label: 'Funcionários', icon: UserCircleIcon, iconSolid: UserCircleIconSolid },
+  { id: 'employees', label: 'Equipe', icon: UserCircleIcon, iconSolid: UserCircleIconSolid },
   { id: 'missions', label: 'Missões', icon: RocketLaunchIcon, iconSolid: RocketLaunchIconSolid, badge: 'availableMissions' },
   { id: 'suggestions', label: 'Sugestões', icon: ChatBubbleLeftIcon, iconSolid: ChatBubbleLeftIconSolid },
 ];
