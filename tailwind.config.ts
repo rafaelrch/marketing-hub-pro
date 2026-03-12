@@ -86,6 +86,7 @@ export default {
           approved: "hsl(var(--status-approved))",
           published: "hsl(var(--status-published))",
           rejected: "hsl(var(--status-rejected))",
+          posted: "hsl(var(--status-posted))",
         },
       },
       borderRadius: {

@@ -142,6 +142,7 @@ const COLUMNS = [
   { id: 'approved', label: 'Aprovado', color: 'bg-green-500' },
   { id: 'revision', label: 'Refação', color: 'bg-blue-500' },
   { id: 'rejected', label: 'Reprovado', color: 'bg-red-500' },
+  { id: 'posted', label: 'Postado', color: 'bg-pink-500' },
 ] as const;
 
 type ColumnId = typeof COLUMNS[number]['id'];
@@ -445,6 +446,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
     'approved': 'approved',
     'revision': 'revision',
     'rejected': 'rejected',
+    'posted': 'posted',
   };
 
   // Organizar conteúdos por coluna (filtrado por funcionário e por data)
@@ -457,6 +459,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
       approved: [],
       revision: [],
       rejected: [],
+      posted: [],
     };
 
     contents
@@ -520,6 +523,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
     'approved': 'approved',
     'revision': 'revision',
     'rejected': 'rejected',
+    'posted': 'posted',
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
@@ -738,7 +742,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
             onDragEnd={handleDragEnd}
           >
             {/* Kanban Board */}
-            <div className="grid grid-cols-6 gap-4 h-[calc(100vh-300px)]">
+            <div className="grid grid-cols-7 gap-4 h-[calc(100vh-300px)]">
               {/* Todas as colunas do Kanban */}
               {COLUMNS.map(column => (
                 <Column
@@ -1004,6 +1008,7 @@ function ContentDetailModal({
     'revision': 'revision',
     'rejected': 'rejected',
     'published': 'approved',
+    'posted': 'posted',
   };
 
   // Mapear coluna do kanban para status do Content
@@ -1014,6 +1019,7 @@ function ContentDetailModal({
     'approved': 'approved',
     'revision': 'revision',
     'rejected': 'rejected',
+    'posted': 'posted',
   };
 
   const [title, setTitle] = useState(content.title);
@@ -1430,6 +1436,14 @@ function ContentDetailModal({
         solidBorderColor: '#0ea5e9',
         icon: PaperAirplaneIcon
       },
+      'posted': { 
+        label: 'Postado', 
+        bgColor: 'bg-pink-500/20', 
+        textColor: 'text-pink-600',
+        borderColor: 'border-pink-600',
+        solidBorderColor: '#ec4899',
+        icon: PaperAirplaneIcon
+      },
     };
     return statusMap[currentStatus] || statusMap['draft'];
   };
@@ -1695,7 +1709,7 @@ function ContentDetailModal({
                     </SelectTrigger>
                     <SelectContent className="p-1 min-w-[180px]">
                       <div className="flex flex-col gap-[8px]">
-                        {(['draft', 'production', 'pending', 'revision', 'approved', 'rejected'] as Content['status'][]).map((statusOption) => {
+                        {(['draft', 'production', 'pending', 'revision', 'approved', 'rejected', 'posted'] as Content['status'][]).map((statusOption) => {
                           const info = getStatusInfo(statusOption);
                           const Icon = info.icon;
                           const isHovered = hoveredStatus === statusOption;

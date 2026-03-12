@@ -81,7 +81,7 @@ export interface Content {
   deadline_time?: string; // Horário do prazo
   social_network: 'instagram' | 'facebook' | 'tiktok' | 'linkedin';
   responsible_id?: string;
-  status: 'draft' | 'production' | 'pending' | 'approved' | 'published' | 'rejected' | 'revision';
+  status: 'draft' | 'production' | 'pending' | 'approved' | 'published' | 'rejected' | 'revision' | 'posted';
   files: string[]; // Arquivos de referência
   finalized_files?: string[]; // Arquivos de material finalizado
   reference_links?: string[]; // Links de referência
@@ -264,7 +264,7 @@ export interface Approval {
   id: string;
   title: string;
   client_id?: string;
-  status: 'content' | 'production' | 'pending' | 'approved' | 'revision' | 'rejected';
+  status: 'content' | 'production' | 'pending' | 'approved' | 'revision' | 'rejected' | 'posted';
   files: string[];
   links: string[];
   created_by?: string;

@@ -54,6 +54,7 @@ const contentStatuses = [
   { value: 'approved', label: 'Aprovado' },
   { value: 'revision', label: 'Refação' },
   { value: 'rejected', label: 'Reprovado' },
+  { value: 'posted', label: 'Postado' },
 ];
 
 interface SchedulePageProps {
