@@ -15,6 +15,7 @@ import {
   ChatBubbleLeftIcon,
   SparklesIcon,
   VideoCameraIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import {
   Squares2X2Icon as Squares2X2IconSolid,
@@ -29,6 +30,7 @@ import {
   ChatBubbleLeftIcon as ChatBubbleLeftIconSolid,
   SparklesIcon as SparklesIconSolid,
   VideoCameraIcon as VideoCameraIconSolid,
+  PhotoIcon as PhotoIconSolid,
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,6 +46,7 @@ interface SidebarProps {
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Squares2X2Icon, iconSolid: Squares2X2IconSolid },
   { id: 'agents', label: 'Agentes IA', icon: SparklesIcon, iconSolid: SparklesIconSolid, isBeta: true },
+  { id: 'feedPreview', label: 'Preview de Feed', icon: PhotoIcon, iconSolid: PhotoIconSolid },
   { id: 'ideas', label: 'Ideias', icon: LightBulbIcon, iconSolid: LightBulbIconSolid },
   { id: 'clients', label: 'Clientes', icon: UserGroupIcon, iconSolid: UserGroupIconSolid },
   { id: 'schedule', label: 'Cronograma', icon: CalendarIcon, iconSolid: CalendarIconSolid },
