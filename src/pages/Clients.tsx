@@ -20,6 +20,8 @@ import {
 
 interface ClientsPageProps {
   searchQuery: string;
+  onNavigate?: (page: string) => void;
+  onSelectClient?: (id: string) => void;
 }
 
 const defaultColors = [
@@ -27,7 +29,7 @@ const defaultColors = [
   '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
 ];
 
-export function ClientsPage({ searchQuery }: ClientsPageProps) {
+export function ClientsPage({ searchQuery, onNavigate, onSelectClient }: ClientsPageProps) {
   const { data: clients, loading, create, update, remove } = useClients();
   const { data: employees } = useEmployees();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -419,7 +421,14 @@ export function ClientsPage({ searchQuery }: ClientsPageProps) {
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-border">
                   <button
-                    onClick={() => setViewingClient(client)}
+                    onClick={() => {
+                        if (onSelectClient && onNavigate) {
+                            onSelectClient(client.id);
+                            onNavigate('clientProfile');
+                        } else {
+                            setViewingClient(client);
+                        }
+                    }}
                     className="flex items-center gap-1 text-sm text-primary hover:text-primary/80"
                   >
                     <Eye className="w-4 h-4" /> Ver detalhes

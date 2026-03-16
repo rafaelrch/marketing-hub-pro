@@ -13,10 +13,12 @@ import { SuggestionsPage } from '@/pages/Suggestions';
 import { AgentsPage } from '@/pages/Agents';
 import { CaptationsPage } from '@/pages/Captations';
 import { FeedPreviewPage } from '@/pages/FeedPreview';
+import { ClientProfile } from '@/pages/ClientProfile';
 import { initializeMockData } from '@/lib/storage';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -30,7 +32,13 @@ const Index = () => {
       case 'ideas':
         return <IdeasPage searchQuery={searchQuery} />;
       case 'clients':
-        return <ClientsPage searchQuery={searchQuery} />;
+        return <ClientsPage searchQuery={searchQuery} onNavigate={setCurrentPage} onSelectClient={setSelectedClientId} />;
+      case 'clientProfile':
+        return selectedClientId ? (
+          <ClientProfile clientId={selectedClientId} onBack={() => setCurrentPage('clients')} />
+        ) : (
+          <ClientsPage searchQuery={searchQuery} onNavigate={setCurrentPage} onSelectClient={setSelectedClientId} />
+        );
       case 'schedule':
         return <SchedulePage searchQuery={searchQuery} />;
       case 'approvals':

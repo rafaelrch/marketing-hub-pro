@@ -35,6 +35,7 @@ export function Layout({ children, currentPage, onPageChange, searchQuery, onSea
     dashboard: 'Dashboard',
     ideas: 'Banco de Ideias',
     clients: 'Clientes',
+    clientProfile: 'Perfil do Cliente',
     schedule: 'Cronograma',
     approvals: 'Aprovações',
     calendar: 'Calendário',

@@ -15,6 +15,15 @@ export interface Client {
     tiktok?: string;
     linkedin?: string;
   };
+  brand_guide?: {
+    typography?: {
+      primary?: string;
+      secondary?: string;
+    };
+    colors?: string[];
+    design_references?: string[];
+    video_references?: string[];
+  };
   responsible_id?: string;
   color: string;
   status: 'active' | 'inactive';
