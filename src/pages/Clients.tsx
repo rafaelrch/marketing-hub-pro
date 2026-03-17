@@ -3,6 +3,7 @@ import { Plus, Edit2, Trash2, Eye, Archive, Instagram, Facebook, Linkedin, Loade
 import { useClients, useEmployees, Client } from '@/hooks/useSupabaseData';
 import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
+import { getClientBrandIdentity } from '@/data/clientBrandData';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { uploadFile, deleteFile } from '@/lib/supabase-storage';
@@ -372,13 +373,13 @@ export function ClientsPage({ searchQuery, onNavigate, onSelectClient }: Clients
 
                 {/* Social Links */}
                 <div className="flex items-center gap-2 mb-4">
-                  {client.socials?.instagram && (
+                  {(getClientBrandIdentity(client.name)?.instagram || client.socials?.instagram) && (
                     <a
-                      href={client.socials.instagram}
+                      href={getClientBrandIdentity(client.name)?.instagram || client.socials?.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
-                      title={client.socials.instagram}
+                      title={getClientBrandIdentity(client.name)?.instagram || client.socials?.instagram}
                     >
                       <Instagram className="w-4 h-4 text-muted-foreground" />
                     </a>
@@ -773,13 +774,13 @@ export function ClientsPage({ searchQuery, onNavigate, onSelectClient }: Clients
               </div>
             )}
 
-            {(viewingClient.socials?.instagram || viewingClient.socials?.facebook || viewingClient.socials?.tiktok || viewingClient.socials?.linkedin) && (
+            {(getClientBrandIdentity(viewingClient.name)?.instagram || viewingClient.socials?.instagram || viewingClient.socials?.facebook || viewingClient.socials?.tiktok || viewingClient.socials?.linkedin) && (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Redes Sociais</p>
                 <div className="flex items-center gap-2">
-                  {viewingClient.socials?.instagram && (
+                  {(getClientBrandIdentity(viewingClient.name)?.instagram || viewingClient.socials?.instagram) && (
                     <a
-                      href={viewingClient.socials.instagram}
+                      href={getClientBrandIdentity(viewingClient.name)?.instagram || viewingClient.socials?.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
