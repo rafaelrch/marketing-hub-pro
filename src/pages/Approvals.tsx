@@ -36,6 +36,7 @@ import { Modal } from '@/components/ui/modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { format, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, addDays, addWeeks, addMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -146,6 +147,117 @@ const COLUMNS = [
 ] as const;
 
 type ColumnId = typeof COLUMNS[number]['id'];
+type ApprovalsViewMode = 'kanban' | 'board';
+
+interface ApprovalCardBaseProps {
+  content: Content;
+  onClick: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  commentCount?: number;
+  dragHandle?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+function ApprovalCardBase({
+  content,
+  onClick,
+  onRename,
+  onDelete,
+  commentCount = 0,
+  dragHandle,
+  className,
+  style,
+}: ApprovalCardBaseProps) {
+  const formatDeadline = (deadline?: string, deadlineTime?: string) => {
+    if (!deadline) return null;
+    try {
+      const date = parseLocalDate(deadline);
+      const formattedDate = format(date, "dd 'de' MMM", { locale: ptBR });
+      if (deadlineTime) {
+        const [hours, minutes] = deadlineTime.split(':');
+        return `${formattedDate} às ${hours}:${minutes}`;
+      }
+      return formattedDate;
+    } catch {
+      return deadline;
+    }
+  };
+
+  const deadlineFormatted = formatDeadline(content.deadline, (content as any).deadline_time);
+
+  return (
+    <div
+      style={style}
+      className={cn(
+        "bg-card rounded-lg border border-border hover:shadow-md transition-all select-none relative group flex",
+        className
+      )}
+    >
+      {dragHandle}
+
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex-1 p-3 pr-10 text-left min-w-0"
+      >
+        <h3 className="font-semibold text-sm mb-1.5 line-clamp-2">{content.title}</h3>
+
+        {deadlineFormatted && (
+          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
+            <Calendar className="w-3 h-3" />
+            <span>{deadlineFormatted}</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 mt-1.5">
+          {content.files.length > 0 && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <PhotoIcon className="w-3 h-3" />
+              <span>{content.files.length}</span>
+            </div>
+          )}
+          {commentCount > 0 && (
+            <div className="flex items-center gap-1 text-xs text-primary">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span>{commentCount}</span>
+            </div>
+          )}
+        </div>
+      </button>
+
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="p-1 rounded hover:bg-muted transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <EllipsisVerticalIcon className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(); }}>
+              <PencilIcon className="w-4 h-4 mr-2" />
+              Renomear
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="text-destructive focus:text-destructive"
+            >
+              <TrashIcon className="w-4 h-4 mr-2" />
+              Remover
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
+}
 
 // Componente de Card Sortable
 function SortableCard({ 
@@ -171,117 +283,83 @@ function SortableCard({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  // Helper para parsear datas YYYY-MM-DD como data local
-  const parseLocalDate = (dateStr: string): Date => {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  };
-
-  // Formatar data de entrega
-  const formatDeadline = (deadline?: string, deadlineTime?: string) => {
-    if (!deadline) return null;
-    try {
-      const date = parseLocalDate(deadline);
-      const formattedDate = format(date, "dd 'de' MMM", { locale: ptBR });
-      if (deadlineTime) {
-        const [hours, minutes] = deadlineTime.split(':');
-        return `${formattedDate} às ${hours}:${minutes}`;
-      }
-      return formattedDate;
-    } catch {
-      return deadline;
-    }
-  };
-
-  const deadlineFormatted = formatDeadline(content.deadline, (content as any).deadline_time);
-
   return (
-    <div
-      ref={setNodeRef}
+    <div ref={setNodeRef}>
+      <ApprovalCardBase
+        content={content}
+        onClick={onClick}
+        onRename={onRename}
+        onDelete={onDelete}
+      commentCount={commentCount}
+      className={cn(isDragging && "shadow-lg opacity-50")}
       style={style}
-      className={cn(
-        "bg-card rounded-lg border border-border hover:shadow-md transition-all select-none relative group flex",
-        isDragging && "shadow-lg opacity-50"
-      )}
-    >
-      {/* Drag Handle - lado esquerdo sempre visível */}
-      <div 
-        {...attributes}
-        {...listeners}
-        className="flex items-center justify-center px-2 cursor-grab active:cursor-grabbing hover:bg-muted/50 rounded-l-lg border-r border-border"
-        title="Arrastar"
-      >
-        <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 16 16">
-          <circle cx="4" cy="4" r="1.5"/>
-          <circle cx="4" cy="8" r="1.5"/>
-          <circle cx="4" cy="12" r="1.5"/>
-          <circle cx="10" cy="4" r="1.5"/>
-          <circle cx="10" cy="8" r="1.5"/>
-          <circle cx="10" cy="12" r="1.5"/>
-        </svg>
+      dragHandle={
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center justify-center px-2 cursor-grab active:cursor-grabbing hover:bg-muted/50 rounded-l-lg border-r border-border"
+          title="Arrastar"
+        >
+          <svg className="w-4 h-4 text-muted-foreground" fill="currentColor" viewBox="0 0 16 16">
+            <circle cx="4" cy="4" r="1.5"/>
+            <circle cx="4" cy="8" r="1.5"/>
+            <circle cx="4" cy="12" r="1.5"/>
+            <circle cx="10" cy="4" r="1.5"/>
+            <circle cx="10" cy="8" r="1.5"/>
+            <circle cx="10" cy="12" r="1.5"/>
+          </svg>
+        </div>
+      }
+      />
+    </div>
+  );
+}
+
+function BoardRow({
+  column,
+  contents,
+  onCardClick,
+  onRenameCard,
+  onDeleteCard,
+  commentCounts = {},
+}: {
+  column: typeof COLUMNS[number];
+  contents: Content[];
+  onCardClick: (content: Content) => void;
+  onRenameCard: (content: Content) => void;
+  onDeleteCard: (content: Content) => void;
+  commentCounts?: Record<string, number>;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-muted/40">
+        <div className={cn("w-3 h-3 rounded-full flex-shrink-0", column.color)} />
+        <h2 className="font-semibold text-sm">{column.label}</h2>
+        <span className="ml-auto text-xs text-muted-foreground bg-background px-2 py-0.5 rounded-full">
+          {contents.length}
+        </span>
       </div>
 
-      {/* Conteúdo clicável */}
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex-1 p-3 text-left min-w-0"
-      >
-        <h3 className="font-semibold text-sm mb-1.5 line-clamp-2">{content.title}</h3>
-        
-        {/* Data de entrega */}
-        {deadlineFormatted && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1.5">
-            <Calendar className="w-3 h-3" />
-            <span>{deadlineFormatted}</span>
+      <div className="p-4">
+        {contents.length > 0 ? (
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {contents.map((content) => (
+              <ApprovalCardBase
+                key={content.id}
+                content={content}
+                onClick={() => onCardClick(content)}
+                onRename={() => onRenameCard(content)}
+                onDelete={() => onDeleteCard(content)}
+                commentCount={commentCounts[content.id] || 0}
+                className="w-[280px] min-w-[280px] flex-shrink-0"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 py-8 text-sm text-muted-foreground">
+            Nenhum item nesta etapa
           </div>
         )}
-
-        {/* Ícones de anexos e comentários */}
-        <div className="flex items-center gap-3 mt-1.5">
-          {content.files.length > 0 && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <PhotoIcon className="w-3 h-3" />
-              <span>{content.files.length}</span>
-            </div>
-          )}
-          {commentCount > 0 && (
-            <div className="flex items-center gap-1 text-xs text-primary">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <span>{commentCount}</span>
-            </div>
-          )}
-        </div>
-      </button>
-
-      {/* Menu de opções - canto superior direito */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="p-1 rounded hover:bg-muted transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <EllipsisVerticalIcon className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(); }}>
-              <PencilIcon className="w-4 h-4 mr-2" />
-              Renomear
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}
-              className="text-destructive focus:text-destructive"
-            >
-              <TrashIcon className="w-4 h-4 mr-2" />
-              Remover
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );
@@ -371,6 +449,7 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const [dateFilter, setDateFilter] = useState<ApprovalsDateFilter>('all');
+  const [viewMode, setViewMode] = useState<ApprovalsViewMode>('kanban');
 
   // Filtrar funcionários da área criativa
   const creativeEmployees = useMemo(() => {
@@ -680,6 +759,15 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
 
   return (
     <div className="space-y-6">
+      <div className="bg-card rounded-xl border border-border p-4">
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ApprovalsViewMode)}>
+          <TabsList className="grid w-full max-w-sm grid-cols-2">
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+            <TabsTrigger value="board">Prancheta</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       {/* Tabs de Funcionários + Filtro de Data */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex flex-row items-center justify-start [perspective:1000px] relative overflow-auto sm:overflow-visible no-visible-scrollbar max-w-full w-full gap-1">
@@ -729,47 +817,63 @@ export function ApprovalsPage({ searchQuery }: ApprovalsPageProps) {
 
       <AnimatePresence mode="wait">
         <motion.div
-          key={selectedEmployee || 'default'}
+          key={`${selectedEmployee || 'default'}-${viewMode}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            {/* Kanban Board */}
-            <div className="grid grid-cols-7 gap-4 h-[calc(100vh-300px)]">
-              {/* Todas as colunas do Kanban */}
-              {COLUMNS.map(column => (
-                <Column
+          {viewMode === 'kanban' ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="overflow-x-auto pb-2">
+                <div className="grid min-w-[1400px] grid-cols-7 gap-4 h-[calc(100vh-300px)]">
+                  {COLUMNS.map(column => (
+                    <Column
+                      key={column.id}
+                      column={column}
+                      contents={contentsByColumn[column.id]}
+                      onCardClick={handleCardClick}
+                      onAddCard={(title) => handleAddCard(title, column.id)}
+                      onRenameCard={handleRenameCard}
+                      onDeleteCard={handleDeleteCard}
+                      isDragging={!!activeId}
+                      commentCounts={commentCounts}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <DragOverlay>
+                {activeId ? (() => {
+                  const activeContent = contents.find(c => c.id === activeId);
+                  return activeContent ? (
+                    <div className="bg-card rounded-lg border border-border p-4 shadow-lg opacity-90">
+                      <h3 className="font-semibold text-sm">{activeContent.title}</h3>
+                    </div>
+                  ) : null;
+                })() : null}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <div className="space-y-4">
+              {COLUMNS.map((column) => (
+                <BoardRow
                   key={column.id}
                   column={column}
                   contents={contentsByColumn[column.id]}
                   onCardClick={handleCardClick}
-                  onAddCard={(title) => handleAddCard(title, column.id)}
                   onRenameCard={handleRenameCard}
                   onDeleteCard={handleDeleteCard}
-                  isDragging={!!activeId}
                   commentCounts={commentCounts}
                 />
               ))}
-          </div>
-          
-            <DragOverlay>
-              {activeId ? (() => {
-                const activeContent = contents.find(c => c.id === activeId);
-                return activeContent ? (
-                  <div className="bg-card rounded-lg border border-border p-4 shadow-lg opacity-90">
-                    <h3 className="font-semibold text-sm">{activeContent.title}</h3>
-                  </div>
-                ) : null;
-              })() : null}
-            </DragOverlay>
-          </DndContext>
+            </div>
+          )}
         </motion.div>
       </AnimatePresence>
 
@@ -2450,4 +2554,3 @@ function ContentDetailModal({
     </div>
   );
 }
-
